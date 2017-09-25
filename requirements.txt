@@ -1,0 +1,7 @@
+aiohttp
+jinja2
+configparser
+tqdm
+peewee
+Python-bs4
+python3-lxml

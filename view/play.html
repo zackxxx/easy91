@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title or '91'}}</title>
+</head>
+<style>
+    video#backgroundvid {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        z-index: -100;
+        background-size: cover;
+    }
+
+    .white {
+        color: #ffffff;
+    }
+
+</style>
+<body style="margin: 0px;">
+<div>
+    <form action="/" method="POST">
+        <input type="text" name="url" value="">
+        <button class="submit">撸</button>
+    </form>
+    <form action="/" method="POST">
+        <input type="hidden" name="url" value="{{url}}">
+        <button class="submit">刷新</button>
+    </form>
+    {% if result %}
+    <a href="{{url}}" class="white">{{result['title']}}</a>
+    <a href="http://91.91p11.space/uvideos.php?UID={{result['user_no']}}" class="white">{{result['user_name']}}</a>
+    {% endif %}
+</div>
+
+<div>
+    <video name="media" controls="" height="auto" width="auto" id="backgroundvid">
+        <source src="{{ play_url }}" type="video/mp4">
+    </video>
+</div>
+
+</body>
+</html>
+
+
+

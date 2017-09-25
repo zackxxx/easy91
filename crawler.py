@@ -2,10 +2,9 @@
 
 from cpcommon import CPCrawler
 import asyncio
-import collections
 import sys
 import os
-from repository import persist_video, Video
+from repository import persist_video, persist_video_source, Video
 
 VERBOSE = False
 MAX_CONCUR_REQ = 10
@@ -17,6 +16,14 @@ def dd(content):
     exit(1)
 
 
+def get_config(*config_key):
+    import configparser
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+    config = configparser.ConfigParser()
+    config.read(config_path)
+    return config.get(*config_key)
+
+
 def update(crawler):
     categories = ['rf', 'top', 'hot', 'md', 'rp', 'tf']
     for category in categories:
@@ -26,24 +33,123 @@ def update(crawler):
             loop.run_in_executor(None, persist_video, video_info)
 
 
+def update_source(crawler, end_page=20, start_page=1):
+    try:
+        step = 20
+        total_pages = end_page - start_page + 1
+        current_end_page = start_page + step - 1
+        while current_end_page <= end_page:
+            videos = crawler.get_all(start_page, end_page=current_end_page)
+            print(
+                'total page {} current page {} to {} with video count {}'.format(total_pages, start_page,
+                                                                                 current_end_page,
+                                                                                 len(videos)))
+            for view_id, video_info in videos.items():
+                loop = asyncio.get_event_loop()
+                loop.run_in_executor(None, persist_video_source, video_info)
+
+            current_end_page += step
+            start_page += step
+    except KeyboardInterrupt:
+        print('current start page is {}'.format(start_page))
+
+    except Exception:
+        return start_page
+    else:
+        return None
+
+
+def sync_all(crawler, start_page=1, end_page=20):
+    while True:
+        start_page = int(start_page)
+        end_page = int(end_page)
+        print('start offset {}'.format(start_page))
+        start_page = update_source(crawler, end_page, start_page)
+        print('error offset {}'.format(start_page))
+        if start_page is None:
+            break
+
+
 def get_url(crawler, count=200):
     try:
         videos = Video.select().where(Video.downloaded == 0).limit(count)
         if videos.count() > 0:
-            result = crawler.get_detail([video.view_id for video in videos])
+            view_ids = [video.view_id for video in videos]
+            result = crawler.get_detail(view_ids)
     except BaseException:
         result = crawler.get_pending_data()
     finally:
         urls = [detail['download_url'] for detail in result if detail is not None]
+        deleted = set(view_ids) - set([detail['view_id'] for detail in result if detail is not None])
+        deleted_count = len(deleted)
+        if deleted_count > 0:
+            deleted_count = Video.update(downloaded=-1).where(Video.view_id << deleted).execute()
+
+        print('craw succeed count {}, deleted count {}'.format(len(set(view_ids)) - deleted_count, deleted_count))
+
         with open('data/urls.txt', 'w') as f:
             for url in urls:
                 f.write(url + "\n")
         return urls
 
 
+def get_detail(crawler, view_ids):
+    try:
+        result = crawler.get_detail(view_ids)
+    except BaseException:
+        result = crawler.get_pending_data()
+
+    for video in result:
+        persist_video(video)
+
+    urls = [detail['download_url'] for detail in result if detail is not None]
+    with open('data/urls.txt', 'w') as f:
+        for url in urls:
+            f.write(url + "\n")
+    print(urls)
+    return urls
+
+
+def get_user_lists(crawler, user_info):
+    for user_no, start_page, end_page in user_info:
+        videos = crawler.get_user_lists(user_no, start_page, end_page)
+        for view_id, video_info in videos.items():
+            loop = asyncio.get_event_loop()
+            loop.run_in_executor(None, persist_video, video_info)
+
+
+def get_hd_url(crawler, count=200):
+    try:
+        videos = Video.select().where(Video.downloaded == 0).limit(count)
+        if videos.count() > 0:
+            view_ids = [video.view_id for video in videos]
+            result = crawler.get_hd_detail(view_ids, raw=True)
+            dd(result)
+    except BaseException:
+        result = crawler.get_pending_data()
+    finally:
+        urls = [detail['download_url'] for detail in result if detail is not None]
+        deleted = set(view_ids) - set([detail['view_id'] for detail in result if detail is not None])
+        deleted_count = len(deleted)
+        # if deleted_count > 0:
+        # deleted_count = Video.update(downloaded=-1).where(Video.view_id << deleted).execute()
+
+        print('craw succeed count {}, deleted count {}'.format(len(set(view_ids)) - deleted_count, deleted_count))
+
+        with open('data/urls.txt', 'w') as f:
+            for url in urls:
+                f.write(url + "\n")
+        return urls
+
+
+def init_url():
+    get_real = get_config('URL', 'real')
+    base_url = get_config('URL', 'base')
+    return get_real, base_url
+
+
 def init_crawler(debug=False):
-    get_real = 'http://91.9p91.com/'
-    base_url = 'http://91.91p11.space/'
+    get_real, base_url = init_url()
     crawler = CPCrawler(base_url, get_real, MAX_CONCUR_REQ, debug)
     crawler.set_debug(debug)
     return crawler
@@ -76,22 +182,41 @@ def rename_video(vno, origin_file_name, path):
 
 
 if __name__ == '__main__':
-
     argv = sys.argv
     running = argv[1:]
 
     if 'rename' in running:
         path = running[-1]
         rename(path)
+        exit(0)
 
     crawler = init_crawler()
+
+    if 'sync' in running:
+        sync_all(crawler, *(running[1:3]))
 
     if len(running) == 0:
         update(crawler)
         get_url(crawler, 20)
 
+    if 'user' in running:
+        if len(running) > 1:
+            user_info = [tuple(running[1:])]
+        else:
+            user_info = [
+                (6165190, 1, 1),
+                (6012931, 1, 4),
+                (6302848, 1, 4),
+                (6011203, 1, 1),
+            ]
+        get_user_lists(crawler, user_info)
+
     if 'update' in running:
         update(crawler)
+
+    if len(running) > 0 and 'v' == running[0]:
+        get_detail(crawler, running[1:])
+
     if 'url' in running:
         if running[-1].isdigit():
             count = int(running[-1])

@@ -81,7 +81,7 @@ class HttpCommon:
 
         async with aiohttp.ClientSession(cookies=cookies) as session:
             request_call = getattr(session, method)
-            async with request_call(url, params=params, headers=headers) as res:
+            async with request_call(url, params=params, headers=headers, timeout=20) as res:
                 if res.status == 200:
                     ctype = res.headers.get('Content-type', '').lower()
                     if 'json' in ctype or url.endswith('json'):
