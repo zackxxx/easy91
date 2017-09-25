@@ -9,7 +9,39 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../"))
 
 from crawler import init_crawler, get_config
 
-crawler = init_crawler(debug=True)
+crawler = init_crawler(debug=False)
+
+
+async def docs(request):
+    data = {
+        '列表': {
+            'route': '/',
+            'params': {
+                'cat': {
+                    'rf': '最近加精',
+                    'top': '本月最热',
+                    'hot': '当前最热',
+                    'md': '本月讨论',
+                    'rp': '最近得分',
+                    'tf': '本月收藏',
+                    'mf': ' 收藏最多',
+                    'long': '10分钟以上 ',
+                },
+                'page': 'int',
+                'm': 'int(当cat为top)，取值为(1-12,-1=last_month)'
+            },
+        },
+        '详情': {
+            'route': 'detail/{view_id}',
+        },
+        '用户': {
+            'route': 'user/{user_no}',
+            'params': {
+                'page': 'int',
+            }
+        }
+    }
+    return web.json_response(data)
 
 
 async def lists(request):
@@ -71,10 +103,17 @@ async def detail(request):
         return web.json_response({'data': data})
 
 
-app = web.Application()
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        port = 8081
+    else:
+        port = int(sys.argv[-1])
 
-app.router.add_get('/', lists)
-app.router.add_get('/user/{user_no}', user)
-app.router.add_get('/detail/{view_id}', detail)
+    app = web.Application()
 
-web.run_app(app, port=8081)
+    app.router.add_get('/', lists)
+    app.router.add_get('/user/{user_no}', user)
+    app.router.add_get('/detail/{view_id}', detail)
+    app.router.add_get('/docs', docs)
+
+    web.run_app(app, port=port)
