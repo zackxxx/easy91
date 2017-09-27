@@ -205,6 +205,7 @@ class CPParser:
     @classmethod
     def get_pagination(cls, content):
         pages = cls.CP_REGS['pages'].findall(content)
+        pages.push(1)
         current_page = int(cls.CP_REGS['current_page'].findall(content)[0])
         pages = [int(page) for page in pages if page.isnumeric()]
         return max(current_page, max(pages)), current_page

@@ -5,3 +5,4 @@ tqdm
 peewee
 beautifulsoup4
 lxml
+aiohttp_cors

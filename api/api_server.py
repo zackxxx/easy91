@@ -2,6 +2,7 @@ from aiohttp import web
 import urllib
 import sys
 import os
+import aiohttp_cors
 
 # Add the directory containing your module to the Python path (wants absolute paths)
 
@@ -115,5 +116,17 @@ if __name__ == '__main__':
     app.router.add_get('/user/{user_no}', user)
     app.router.add_get('/detail/{view_id}', detail)
     app.router.add_get('/docs', docs)
+
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )
+    })
+
+    # Configure CORS on all routes.
+    for route in list(app.router.routes()):
+        cors.add(route)
 
     web.run_app(app, port=port)
