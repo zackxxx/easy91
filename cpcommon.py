@@ -186,7 +186,7 @@ class CPParser:
             img_url = bs_link[0].find('img').get('src').replace('1_', '').replace('2_', '').replace('3_', '')
             title = bs_link[0].find('img').get('title')
             user_no = re.compile('UID=(\d+)').findall(bs_link[-1].get('href'))[0]
-            vtime = re.compile('时长:([\w\W]*?)\n').findall(bs_videos[0].text)[0]
+            vtime = re.compile('时长:([\w\W]*?)\n').findall(bs_video.text)[0]
             user_name = bs_link[-1].text
             vno = re.compile('/(\d+)\.').findall(str(img_url))[0]
 
@@ -205,7 +205,7 @@ class CPParser:
     @classmethod
     def get_pagination(cls, content):
         pages = cls.CP_REGS['pages'].findall(content)
-        pages.push(1)
+        pages.append('1')
         current_page = int(cls.CP_REGS['current_page'].findall(content)[0])
         pages = [int(page) for page in pages if page.isnumeric()]
         return max(current_page, max(pages)), current_page
@@ -215,6 +215,7 @@ class CPParser:
         videos_info = {}
 
         bs = BeautifulSoup(content, 'lxml')
+        print(bs)
         for bs_video in bs.find_all('div', attrs={'class': 'myvideo'}):
             detail = bs_video.find('p').text
             created_at = re.compile('添加时间: ([\w\W]*?)\n').findall(detail)[0]
