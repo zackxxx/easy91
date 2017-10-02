@@ -2,9 +2,9 @@ import asyncio
 import tqdm
 from httpcommon import HttpCommon
 import re
-from urllib import parse
 import json
 from bs4 import BeautifulSoup
+import urllib
 
 
 def dd(content):
@@ -98,10 +98,21 @@ class CPApi(HttpCommon):
                                                                       error))
                 with open('fail_page', 'a') as f:
                     f.write(json.dumps(params) + '\n')
-                return {}
+
+                if pagination:
+                    return {}, {
+                        'last_page': 0,
+                        'current_page': 0,
+                        'per_page': 0,
+                        'source_url': self._get_endpoint_real_url(endpoint) + '?' + urllib.parse.urlencode(params)
+                    }
+                else:
+                    return {}
+
             else:
                 if self.debug:
                     print('finish craw {} with params {}'.format(self._get_endpoint_real_url(endpoint), params))
+
                 if raw:
                     return content
 
@@ -110,7 +121,6 @@ class CPApi(HttpCommon):
                 if self.debug:
                     print('get {} with item count {}'.format(endpoint, len(data)))
 
-                if self.debug:
                     file_name = endpoint
                     for k, v in params.items():
                         file_name += str(k) + '-' + str(v)
@@ -118,7 +128,6 @@ class CPApi(HttpCommon):
                         f.write(content)
 
                 if pagination:
-                    import urllib
                     last_page, current_page = self.cp_parser.get_pagination(content)
                     pagination = {
                         'last_page': last_page,
@@ -321,7 +330,7 @@ class CPParser:
         return video_info
 
     def parse_info(self, content):
-        return parse.parse_qs(str(content))
+        return urllib.parse.parse_qs(str(content))
 
 
 class CPCrawler:

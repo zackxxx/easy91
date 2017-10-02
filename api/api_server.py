@@ -45,6 +45,12 @@ async def docs(request):
     return web.json_response(data)
 
 
+async def login(request):
+    data = await request.post()
+    username = data.get('username')
+    password = data.get('password')
+
+
 async def lists(request):
     meta = {
         'cat': {
