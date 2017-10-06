@@ -1,7 +1,24 @@
 from peewee import *
 from playhouse.sqlite_ext import SqliteExtDatabase
+from common import dd, get_config
 
-db = SqliteExtDatabase('data/database.db')
+db = init_db()
+
+
+def init_db():
+    driver = get_config('DATABASE', 'driver')
+    host = get_config(driver, 'host')
+    username = get_config(driver, 'username')
+    password = get_config(driver, 'password')
+    database = get_config(driver, 'database')
+
+    if driver == 'POSTGRESQL':
+        db = PostgresqlDatabase(database, user=username, host=host, password=password)
+    elif driver == 'SQLITE':
+        db = SqliteExtDatabase('data/database.db')
+    else:
+        raise NotSupportedError
+    return db
 
 
 class BaseModel(Model):

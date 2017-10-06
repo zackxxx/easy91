@@ -5,12 +5,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 import urllib
-
-
-def dd(content):
-    print(type(content))
-    print(content)
-    exit(1)
+from common import dd, get_config
 
 
 class CPError(Exception):
@@ -31,7 +26,6 @@ class CPApi(HttpCommon):
         'detail': {'uri': 'view_video.php', 'auth': False, 'parser': 'parse_detail'},
         'hd_detail': {'uri': 'view_video.php', 'auth': False, 'parser': 'parse_hd_detail'},
         'info': {'uri': 'getfile_jw.php', 'auth': False, 'parser': 'parse_info'},
-        'hd_detail': {'uri': 'view_video_hd.php', 'auth': False, 'parser': 'parse_hd_detail'},
     }
 
     def __init__(self, base_url, get_real_base_url, semaphore, debug=False):

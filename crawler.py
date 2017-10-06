@@ -5,23 +5,11 @@ import asyncio
 import sys
 import os
 from repository import persist_video, persist_video_source, Video
+from common import dd, get_config
+
 
 VERBOSE = False
 MAX_CONCUR_REQ = 10
-
-
-def dd(content):
-    print(type(content))
-    print(content)
-    exit(1)
-
-
-def get_config(*config_key):
-    import configparser
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
-    config = configparser.ConfigParser()
-    config.read(config_path)
-    return config.get(*config_key)
 
 
 def update(crawler):
