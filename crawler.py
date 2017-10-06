@@ -7,7 +7,6 @@ import os
 from repository import persist_video, persist_video_source, Video
 from common import dd, get_config
 
-
 VERBOSE = False
 MAX_CONCUR_REQ = 10
 
@@ -178,7 +177,8 @@ if __name__ == '__main__':
         rename(path)
         exit(0)
 
-    crawler = init_crawler()
+    debug = bool(get_config('APP', 'debug'))
+    crawler = init_crawler(debug=debug)
 
     if 'sync' in running:
         sync_all(crawler, *(running[1:3]))

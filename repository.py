@@ -1,8 +1,6 @@
 from peewee import *
-from playhouse.sqlite_ext import SqliteExtDatabase
 from common import dd, get_config
-
-db = init_db()
+import psycopg2
 
 
 def init_db():
@@ -15,10 +13,14 @@ def init_db():
     if driver == 'POSTGRESQL':
         db = PostgresqlDatabase(database, user=username, host=host, password=password)
     elif driver == 'SQLITE':
+        from playhouse.sqlite_ext import SqliteExtDatabase
         db = SqliteExtDatabase('data/database.db')
     else:
         raise NotSupportedError
     return db
+
+
+db = init_db()
 
 
 class BaseModel(Model):
@@ -54,16 +56,8 @@ class VideoSource(BaseModel):
     downloaded = IntegerField(default=0)
 
 
-try:
-    db.connect()
-    db.create_tables([Video])
-except OperationalError:
-    pass
-
-try:
-    db.create_tables([VideoSource])
-except OperationalError:
-    pass
+Video.create_table(True)
+VideoSource.create_table(True)
 
 
 def persist_video(video_info):
