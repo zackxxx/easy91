@@ -6,4 +6,4 @@ peewee
 beautifulsoup4
 lxml
 aiohttp_cors
-psycopg2
+PyMySQL

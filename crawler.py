@@ -14,7 +14,7 @@ MAX_CONCUR_REQ = 10
 def update(crawler):
     categories = ['rf', 'top', 'hot', 'md', 'rp', 'tf']
     for category in categories:
-        videos = crawler.get_lists(category, 1, 6)
+        videos = crawler.get_lists(category, 1, 20)
         for view_id, video_info in videos.items():
             loop = asyncio.get_event_loop()
             loop.run_in_executor(None, persist_video, video_info)
@@ -52,7 +52,7 @@ def sync_all(crawler, start_page=1, end_page=20):
         end_page = int(end_page)
         print('start offset {}'.format(start_page))
         start_page = update_source(crawler, end_page, start_page)
-        print('error offset {}'.format(start_page))
+        # print('error offset {}'.format(start_page))
         if start_page is None:
             break
 
@@ -63,6 +63,8 @@ def get_url(crawler, count=200):
         if videos.count() > 0:
             view_ids = [video.view_id for video in videos]
             result = crawler.get_detail(view_ids)
+        else:
+            result = []
     except BaseException:
         result = crawler.get_pending_data()
     finally:
@@ -169,6 +171,7 @@ def rename_video(vno, origin_file_name, path):
 
 
 if __name__ == '__main__':
+
     argv = sys.argv
     running = argv[1:]
 
@@ -177,15 +180,15 @@ if __name__ == '__main__':
         rename(path)
         exit(0)
 
-    debug = bool(get_config('APP', 'debug'))
+    debug = bool(get_config('APP', 'debug') == 1)
     crawler = init_crawler(debug=debug)
-
-    if 'sync' in running:
-        sync_all(crawler, *(running[1:3]))
 
     if len(running) == 0:
         update(crawler)
         get_url(crawler, 20)
+
+    if 'sync' in running:
+        sync_all(crawler, *(running[1:3]))
 
     if 'user' in running:
         if len(running) > 1:

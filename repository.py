@@ -1,6 +1,5 @@
 from peewee import *
 from common import dd, get_config
-import psycopg2
 
 
 def init_db():
@@ -9,12 +8,15 @@ def init_db():
     username = get_config(driver, 'username')
     password = get_config(driver, 'password')
     database = get_config(driver, 'database')
+    port = int(get_config(driver, 'port'))
 
     if driver == 'POSTGRESQL':
         db = PostgresqlDatabase(database, user=username, host=host, password=password)
     elif driver == 'SQLITE':
         from playhouse.sqlite_ext import SqliteExtDatabase
         db = SqliteExtDatabase('data/database.db')
+    elif driver == 'MYSQL':
+        db = MySQLDatabase(database, user=username, host=host, password=password, port=port)
     else:
         raise NotSupportedError
     return db
@@ -65,12 +67,15 @@ def persist_video(video_info):
         if video_info is None:
             return None
         video = Video.get(Video.view_id == video_info['view_id'])
-        # print('{} exist, skip'.format(video_info['view_id']))
+        print('{} exist, skip'.format(video_info['view_id']))
+        return video
     except Video.DoesNotExist:
-        video = Video.create(**video_info)
-        # print('save {}, success'.format(video_info['view_id']))
-
-    return video
+        try:
+            video = Video.create(**video_info)
+            print('save {}, success'.format(video_info['view_id']))
+            return video
+        except Exception as e:
+            print(e)
 
 
 def persist_video_source(video_info):

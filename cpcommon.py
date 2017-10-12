@@ -61,7 +61,6 @@ class CPApi(HttpCommon):
 
     def parse(self, endpoint, content, **extract):
         parser = getattr(self.cp_parser, self._endpoint_setting(endpoint, 'parser'))
-        print(parser)
         if self.debug:
             print('start parse content from {}'.format(self._get_endpoint_real_url(endpoint)))
         return parser(str(content), **extract)
@@ -118,7 +117,7 @@ class CPApi(HttpCommon):
                     file_name = endpoint
                     for k, v in params.items():
                         file_name += str(k) + '-' + str(v)
-                    with open('../example/' + file_name, 'w', encoding='utf-8') as f:
+                    with open('./example/' + file_name, 'w', encoding='utf-8') as f:
                         f.write(content)
 
                 if pagination:
@@ -218,7 +217,6 @@ class CPParser:
         videos_info = {}
 
         bs = BeautifulSoup(content, 'lxml')
-        print(bs)
         for bs_video in bs.find_all('div', attrs={'class': 'myvideo'}):
             detail = bs_video.find('p').text
             created_at = re.compile('添加时间: ([\w\W]*?)\n').findall(detail)[0]
